@@ -2,11 +2,8 @@ package com.example.consultorio.controller;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.consultorio.model.Emprestimo;
 import com.example.consultorio.service.EmprestimoService;
-import com.example.consultorio.view.model.EmprestimoRequest;
-import com.example.consultorio.view.model.EmprestimoResponse;
-
 @RestController
 @RequestMapping("/api/emprestimos")
 public class EmprestimoController {
@@ -30,56 +24,37 @@ public class EmprestimoController {
     private EmprestimoService emprestimoService;
 
     @GetMapping
-    public ResponseEntity<List<EmprestimoResponse>> obterTodos(){
+    public ResponseEntity<List<Emprestimo>> obterTodos(){
         List<Emprestimo> emprestimos = emprestimoService.obterTodos();
-
-        ModelMapper mapper = new ModelMapper();
-
-        List<EmprestimoResponse> resposta = emprestimos.stream()
-        .map(emprestimo -> mapper.map(emprestimo, EmprestimoResponse.class))
-        .collect(Collectors.toList());
-
-        return new ResponseEntity<>(resposta, HttpStatus.OK);
+        return ResponseEntity.ok(emprestimos);
     }
 
     @PostMapping
-    public ResponseEntity<EmprestimoResponse> adicionar(@RequestBody EmprestimoRequest empReq){
-        ModelMapper mapper = new ModelMapper();
-
-        Emprestimo emprestimo = mapper.map(empReq, Emprestimo.class);
-
-        emprestimo = emprestimoService.adicionar(emprestimo);
-
-        return new ResponseEntity<>(mapper.map(emprestimo, EmprestimoResponse.class), HttpStatus.CREATED);
+    public ResponseEntity<Emprestimo> adicionar(@RequestBody Emprestimo emprestimo){
+        Emprestimo emprestimoSalvo = emprestimoService.adicionar(emprestimo);
+        return ResponseEntity.ok(emprestimoSalvo);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<EmprestimoResponse>> obterPorId(@PathVariable Integer id){
+    public ResponseEntity<Emprestimo> obterPorId(@PathVariable Integer id){
 
         Optional<Emprestimo> emprestimo =  emprestimoService.obterPorId(id);
-
-        EmprestimoResponse produto = new ModelMapper().map(emprestimo.get(), EmprestimoResponse.class);
-
-        return new ResponseEntity<>(Optional.of(produto), HttpStatus.OK);
+        return emprestimo.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletar(@PathVariable Integer id){
-
-        emprestimoService.deletar(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public ResponseEntity<?> deletarPorId(@PathVariable Integer id){
+        Optional<Emprestimo> emprestimo = emprestimoService.obterPorId(id);
+        if (emprestimo.isPresent()) {
+            emprestimoService.deletarPorId(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EmprestimoResponse> atualizar(@RequestBody EmprestimoRequest emprestimoReq, @PathVariable Integer id){
-
-        ModelMapper mapper = new ModelMapper();
-        Emprestimo emprestimo = mapper.map(emprestimoReq, Emprestimo.class);
-
-        emprestimo = emprestimoService.atualizar(id, emprestimo);
-
-        return new ResponseEntity<>(
-            mapper.map(emprestimo, EmprestimoResponse.class), 
-            HttpStatus.OK);
+    public ResponseEntity<Emprestimo> atualizar(@RequestBody Emprestimo emprestimo, @PathVariable Integer id){
+        emprestimo = emprestimoService.atualizar(id);
+        return ResponseEntity.ok(emprestimo);
     }
 }

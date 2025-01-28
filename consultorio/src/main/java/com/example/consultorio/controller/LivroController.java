@@ -2,11 +2,8 @@ package com.example.consultorio.controller;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.consultorio.model.Livro;
 import com.example.consultorio.service.LivroService;
-import com.example.consultorio.view.model.LivroRequest;
-import com.example.consultorio.view.model.LivroResponse;
 
 @RestController
 @RequestMapping("/api/livros")
@@ -30,56 +25,39 @@ public class LivroController {
     private LivroService livroService;
 
     @GetMapping
-    public ResponseEntity<List<LivroResponse>> obterTodos(){
+    public ResponseEntity<List<Livro>> obterTodos(){
         List<Livro> livros = livroService.obterTodos();
-
-        ModelMapper mapper = new ModelMapper();
-
-        List<LivroResponse> resposta = livros.stream()
-        .map(livro -> mapper.map(livro, LivroResponse.class))
-        .collect(Collectors.toList());
-
-        return new ResponseEntity<>(resposta, HttpStatus.OK);
+        return ResponseEntity.ok(livros);
     }
 
     @PostMapping
-    public ResponseEntity<LivroResponse> adicionar(@RequestBody LivroRequest livroReq){
-        ModelMapper mapper = new ModelMapper();
-
-        Livro livro = mapper.map(livroReq, Livro.class);
-
-        livro = livroService.adicionar(livro);
-
-        return new ResponseEntity<>(mapper.map(livro, LivroResponse.class), HttpStatus.CREATED);
+    public ResponseEntity<Livro> adicionar(@RequestBody Livro livro){
+        Livro livroSalvo = livroService.adicionar(livro);
+        return ResponseEntity.ok(livroSalvo);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<LivroResponse>> obterPorId(@PathVariable Integer id){
+    public ResponseEntity<Livro> obterPorId(@PathVariable Integer id){
 
         Optional<Livro> livro =  livroService.obterPorId(id);
-
-        LivroResponse produto = new ModelMapper().map(livro.get(), LivroResponse.class);
-
-        return new ResponseEntity<>(Optional.of(produto), HttpStatus.OK);
+        return livro.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletar(@PathVariable Integer id){
-
-        livroService.deletar(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public ResponseEntity<?> deletarPorId(@PathVariable Integer id){
+        Optional<Livro> livro = livroService.obterPorId(id);
+        if (livro.isPresent()) {
+            livroService.deletarPorId(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LivroResponse> atualizar(@RequestBody LivroRequest livroReq, @PathVariable Integer id){
+    public ResponseEntity<Livro> atualizarQuant(@RequestBody Livro livroAtt, @PathVariable Integer id){
 
-        ModelMapper mapper = new ModelMapper();
-        Livro livro = mapper.map(livroReq, Livro.class);
+        Livro livro = livroService.atualizarQuant(id, livroAtt.getQuant());
 
-        livro = livroService.atualizar(id, livro);
-
-        return new ResponseEntity<>(
-            mapper.map(livro, LivroResponse.class), 
-            HttpStatus.OK);
+        return ResponseEntity.ok(livro);
     }
 }

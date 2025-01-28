@@ -1,11 +1,7 @@
 package com.example.consultorio.service;
 
-import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,52 +14,28 @@ public class EmprestimoService {
     @Autowired
     private EmprestimoRepository emprestimoRepository;
 
+    public Emprestimo adicionar(Emprestimo emprestimo){
+        
+        return emprestimoRepository.save(emprestimo);
+    }
+
+    public Emprestimo atualizar(Integer id){
+        Emprestimo emprestimoEncontrado = emprestimoRepository.findById(id).orElseThrow(() -> new RuntimeException("emprestimo não encontrado com ID " + id));
+
+        return emprestimoRepository.save(emprestimoEncontrado);
+    }
+
     public Optional<Emprestimo> obterPorId(Integer id){
         
-        Optional<Emprestimo> emprestimo = emprestimoRepository.obterPorId(id);
-        if(emprestimo.isEmpty()){
-            throw new Error("Emprestimo com id: " + id + " não encontrado");
-        }
-        Emprestimo emp = new ModelMapper().map(emprestimo.get(), Emprestimo.class);
-        return Optional.of(emp);
+        return emprestimoRepository.findById(id);
     }
 
     public List<Emprestimo> obterTodos(){
 
-       List<Emprestimo> emprestimos = emprestimoRepository.obterTodos();
-
-       return emprestimos.stream()
-       .map(emprestimo -> new ModelMapper().map(emprestimo, Emprestimo.class))
-       .collect(Collectors.toList());
+       return emprestimoRepository.findAll();
     }
 
-    public Emprestimo adicionar(Emprestimo emprestimo){
-        
-        emprestimo.setEmp_id(null);
-
-        emprestimo = emprestimoRepository.adicionar(emprestimo);
-        emprestimo.setEmp_id(emprestimo.getEmp_id());
-        return emprestimo;
-    }
-
-    public void deletar(Integer id){
-
-        Optional<Emprestimo> emprestimo = emprestimoRepository.obterPorId(id);
-
-        if(emprestimo.isEmpty()){
-            throw new Error("Não foi possível deletar o produto com id:" + id + " - Produto não existe");
-        }
-        emprestimoRepository.deletar(id);
-    }
-
-    public Emprestimo atualizar(Integer id, Emprestimo emprestimo){
-        Optional<Emprestimo> emprestimoEncontrado = obterPorId(emprestimo.getEmp_id());
-
-        if(emprestimoEncontrado.isEmpty()) {
-            throw new InputMismatchException("emprestimo não encontrado");
-        }
-
-        emprestimoRepository.adicionar(emprestimo);
-        return emprestimo;
+    public void deletarPorId(Integer id){
+        emprestimoRepository.deleteById(id);
     }
 }

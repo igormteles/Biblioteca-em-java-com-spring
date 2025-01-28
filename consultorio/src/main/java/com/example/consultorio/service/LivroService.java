@@ -1,16 +1,15 @@
 package com.example.consultorio.service;
 
-import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.consultorio.model.Livro;
 import com.example.consultorio.repository.LivroRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class LivroService {
@@ -18,52 +17,31 @@ public class LivroService {
     @Autowired
     private LivroRepository livroRepository;
 
+    public Livro adicionar(Livro livro){
+        
+        return livroRepository.save(livro);
+    }
+
+    @Transactional
+    public Livro atualizarQuant(Integer id, Integer novaQuant){
+        Livro livroEncontrado = livroRepository.findById(id).orElseThrow(() -> new RuntimeException("Livro não encontrado com ID " + id));
+
+        livroEncontrado.setQuant(livroEncontrado.getQuant() + novaQuant);
+        return livroRepository.save(livroEncontrado);
+    }
+
     public Optional<Livro> obterPorId(Integer id){
         
-        Optional<Livro> livro = livroRepository.obterPorId(id);
-        if(livro.isEmpty()){
-            throw new Error("Livro com id: " + id + " não encontrado");
-        }
-        Livro liv = new ModelMapper().map(livro.get(), Livro.class);
-        return Optional.of(liv);
+        return livroRepository.findById(id);
     }
 
     public List<Livro> obterTodos(){
 
-       List<Livro> livros = livroRepository.obterTodos();
-
-       return livros.stream()
-       .map(livro -> new ModelMapper().map(livro, Livro.class))
-       .collect(Collectors.toList());
+       return livroRepository.findAll();
     }
 
-    public Livro adicionar(Livro livro){
-        
-        livro.setId(null);
-
-        livro = livroRepository.adicionar(livro);
-        livro.setId(livro.getId());
-        return livro;
+    public void deletarPorId(Integer id){
+        livroRepository.deleteById(id);
     }
-
-    public Optional<Livro> deletar(Integer id){
-
-        Optional<Livro> livro = livroRepository.obterPorId(id);
-        if(livro.isEmpty()){
-            throw new Error("Não foi possível deletar o livro com id:" + id + " - Livro não existe");
-        }
-
-        livroRepository.deletar(id);
-        return livroRepository.obterPorId(id);
-    }
-    public Livro atualizar(Integer id, Livro livro){
-        Optional<Livro> livroEncontrado = obterPorId(livro.getId());
-
-        if(livroEncontrado.isEmpty()) {
-            throw new InputMismatchException("Livro não encontrado");
-        }
-
-        livroRepository.adicionar(livro);
-        return livro;
-    }
+    
 }
