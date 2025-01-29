@@ -22,7 +22,6 @@ public class LivroService {
         return livroRepository.save(livro);
     }
 
-    @Transactional
     public Livro atualizarQuant(Integer id, Integer novaQuant){
         Livro livroEncontrado = livroRepository.findById(id).orElseThrow(() -> new RuntimeException("Livro não encontrado com ID " + id));
 
